@@ -3,8 +3,8 @@ import tensorflow as tf
 from tensorflow import keras
 import numpy as np
 
-from utils.py import INPUT_SIZE
-from utils.py import LATENT_DIM
+from utils import INPUT_SIZE
+from utils import LATENT_DIM
 
 
 class Encoder(keras.Model):
@@ -15,12 +15,12 @@ class Encoder(keras.Model):
         self.input_layer = keras.layers.Input(shape=(INPUT_SIZE))
         
         self.conv_layer_one = keras.layers.Conv2D(64, 3, padding="same", activation="relu")
-        self.conv_layer_two = keras.layers.Conv2D(64, 3, padding="same", activation="relu")
-        self.pool_one = keras.layers.MaxPool2D(2, 2)
+        self.conv_layer_two = keras.layers.Conv2D(64, 3, padding="same", activation="relu") #shape = (28, 28, 64)
+        self.pool_one = keras.layers.MaxPool2D(2, 2) #shape = (14, 14, 64)
 
         self.conv_layer_three = keras.layers.Conv2D(128, 3, padding="same", activation="relu")
-        self.conv_layer_four = keras.layers.Conv2D(128, 3, padding="same", activation="relu")
-        self.pool_two = keras.layers.MaxPool2D(2, 2)
+        self.conv_layer_four = keras.layers.Conv2D(128, 3, padding="same", activation="relu") #shape = (14, 14, 128)
+        self.pool_two = keras.layers.MaxPool2D(2, 2) #shape = (7, 7, 128)
 
     
     def __call__(self, inputs):
@@ -39,9 +39,55 @@ class Encoder(keras.Model):
         mean = keras.layers.Dense(LATENT_DIM)(flatten)
         mu_ = keras.layers.Dense(LATENT_DIM)(flatten)
 
-        model = keras.models.Model( 
+        enc_model = keras.models.Model( 
             inputs=[inputs], 
             outputs=[mean, mu_]
             )
         
-        return model(inputs)
+        return enc_model(inputs)
+    
+    
+    def get_config(self):
+        return super().get_config()
+
+
+class Decoder(keras.Model):
+
+    def __init__(self, **kwargs):
+        super(Decoder, self).__init__(**kwargs)
+
+        self.input_layer = keras.layers.Input(shape=(LATENT_DIM) )
+        self.dense_layer = keras.layers.Dense(7 * 7 * 128)
+        self.reshape_layer = keras.layers.Reshape((7, 7, 128))
+        
+
+        self.conv_transpose_one = keras.layers.Conv2DTranspose(128, kernel_size=3, padding="valid", activation="relu") #shape = (14, 14, 128)
+        self.conv_transpose_two = keras.layers.Conv2DTranspose(128, kernel_size=3, padding="same", activation="relu")
+
+        self.conv_transpose_three = keras.layers.Conv2DTranspose(64, kernel_size=3, padding="valid", activation="relu") #shape = (28, 28, 64)
+        self.conv_transpose_four = keras.layers.Conv2DTranspose(64, kernel_size=3, padding="same", activation="relu")
+
+        self.conv_transpose_five = keras.layers.Conv2DTranspose(1, kernel_size=3, padding="same", activation="relu") #shape = (28, 28, 1)
+        self.reshape_layer_two = keras.layers.Reshape((28, 28))
+
+    def __call__(self, inputs):
+        
+        dec_model = keras.models.Sequential([
+            self.input_layer,
+            self.dense_layer,
+            self.reshape_layer,
+
+            self.conv_transpose_one,
+            self.conv_transpose_two,
+
+            self.conv_transpose_three,
+            self.conv_transpose_four,
+
+            self.conv_transpose_five,
+            self.reshape_layer_two            
+        ])
+
+        return dec_model(inputs)
+
+    def get_config(self):
+        return super().get_config()
