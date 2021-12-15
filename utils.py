@@ -1,0 +1,4 @@
+
+
+INPUT_SIZE = 28
+LATENT_DIM = 10
