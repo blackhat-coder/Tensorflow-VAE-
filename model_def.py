@@ -91,3 +91,19 @@ class Decoder(keras.Model):
 
     def get_config(self):
         return super().get_config()
+
+
+class VAE(keras.Model):
+    def __init__(self, **kwargs):
+        super(VAE, super).__init__(**kwargs)
+
+        self.encoder = Encoder()
+        self.decoder = Decoder()
+    
+    def __call__(self, inputs):
+
+        mean, log_var = self.encoder()(inputs) #shape : INPUT_SIZE
+
+        # implement sampling
+
+        ##
