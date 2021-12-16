@@ -93,17 +93,49 @@ class Decoder(keras.Model):
         return super().get_config()
 
 
+
+class Sampling(keras.layers.Layer):
+    
+    '''
+    Reparamaterization Trick
+    '''
+
+    def __init__(self, **kwargs):
+        super(Sampling, self).__init__(**kwargs)
+
+    def __call__(self, inputs):
+
+        '''
+        Args:
+            inputs - A tuple containing (mean, variance)
+            output - A vector of shape LATENT_DIM
+        '''
+
+        mean, log_var = inputs
+        sample = tf.random.normal((LATENT_DIM, 1)) * tf.exp(log_var / 2) + mean
+
+        return sample
+
 class VAE(keras.Model):
+    # Implement Holding the latent Vector
+
     def __init__(self, **kwargs):
         super(VAE, super).__init__(**kwargs)
 
         self.encoder = Encoder()
         self.decoder = Decoder()
     
+    
     def __call__(self, inputs):
+
+        inputs = inputs
 
         mean, log_var = self.encoder()(inputs) #shape : INPUT_SIZE
 
-        # implement sampling
+        latent_vector = Sampling()((mean, log_var))
 
-        ##
+        reconstruction = self.decoder()(latent_vector)
+
+        vae_model = keras.models.Model(inputs=[inputs], outputs=[reconstruction])
+
+        return reconstruction
