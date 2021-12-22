@@ -13,8 +13,7 @@ from models.model_def import VAE
 from models.model_def import Encoder
 from models.model_def import Decoder
 
-optimizer = tf.optimizers.RMSprop(learning_rate=LEARNING_RATE)
-keras_loss = tf.keras.losses.BinaryCrossentropy()
+optimizer = tf.optimizers.Adam(learning_rate=LEARNING_RATE)
 
 
 # Refactor Network_loss into class Network_loss
@@ -71,41 +70,12 @@ def train():
 
                 loss = Network_loss(mean, lg_var)
                 loss_ = loss(batch_x, predictions)
-
-                # loss_ = keras_loss(batch_x, predictions)
             
             gradients = tape.gradient(loss_, model.trainable_weights)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
         print(f"Epoch: {epoch}\nloss: {loss_}")
         # Write Checkpoint at epoch level or at batch level
-
-
-def test_loss():
-    import matplotlib as mpl
-    import matplotlib.pyplot as plt
-    import cv2
-    x_t = x_train[4:5]
-
-    t_model = VAE()
-    t_y, m, v = t_model(x_t)
-
-    print("pred shape")
-    print(t_y.shape)
-    print("input shape")
-    print(x_t.shape)
-
-    t_y = np.reshape(t_y, [28, 28])
-    x_t = np.reshape(x_t, [28, 28])
-
-
-    # cv2.imwrite("x_t.jpg", x_t)
-    # cv2.imwrite("t_y.jpg", t_y)
-    
-    print(f"loss:{ Network_loss(m, v)(x_t, t_y) } ")
-
-    # print(np.array(x_t))
-    plt.imshow(x_t)
 
 # things to do tomorrow:
 # - write training_loop and test the model
@@ -119,6 +89,5 @@ def test_loss():
 if __name__ == "__main__":
     print("Starting tarining.py")
     # train()
-    test_loss()
     print("session ended")
     # print("hello world!")
