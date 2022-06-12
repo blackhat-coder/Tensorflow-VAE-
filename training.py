@@ -3,11 +3,17 @@ from numpy.lib.function_base import gradient
 import tensorflow as tf
 from tensorflow import keras
 import numpy as np
+import datetime
+import os
+import cv2
 
-from utils import LATENT_DIM
-from utils import NO_EPOCHS
-from utils import BATCH_SIZE
-from utils import LEARNING_RATE
+from utilss import LATENT_DIM
+from utilss import NO_EPOCHS
+from utilss import BATCH_SIZE
+from utilss import LEARNING_RATE
+from utilss import CHECKPOINT_PATH
+from utilss import LOG_DIR
+from utilss import DATA_PATH
 
 from models.model_def import VAE
 from models.model_def import Encoder
@@ -38,27 +44,48 @@ def Network_loss(mean, log_var, alpha=1, beta=1):
     
     return loss
 
-(x_train, y_train), (x_test, y_test) = keras.datasets.mnist.load_data()
-x_train = np.reshape(x_train, (-1, 28, 28, 1))
-x_test = np.reshape(x_test, (-1, 28, 28, 1))
+def LogsWriter():
+    log_dir_name = datetime.datetime.now().strftime("%d%m%y-%H%M%S")
 
-x_train = x_train/255.0
+    train_writer = tf.summary.create_file_writer(f"{LOG_DIR}\\{log_dir_name}\\train")
+    val_writer = tf.summary.create_file_writer(f"{LOG_DIR}\\{log_dir_name}\\val")
 
+    return train_writer, val_writer
 
-x_val = x_train[-10000:]
-y_val = y_train[-10000:]
-x_train = x_train[:-10000]
-y_train = y_train[:-10000]
+class DataPrep():
+    def __init__(self, shuffle=True, buffer_size=1024):
+        self.shuffle = True
+        self.buffer_size = buffer_size
+        self.rawimages = []
+        self.processed_images = []
 
-x_train = x_train[:1000]
-y_train = y_train[:1000]
+    def prepare_data(self, path=""):
+        data_dir = DATA_PATH + path
+        for filename in os.listdir(data_dir):
+            self.rawimages.append(os.path.join(data_dir, filename))
 
-train_dataset = tf.data.Dataset.from_tensor_slices((x_train, y_train))
-train_dataset = train_dataset.shuffle(buffer_size=1024).batch(BATCH_SIZE)
+        for image in self.rawimages:
+            image_data = cv2.imread(image)
+            self.processed_images.append(image_data)
 
-def train():
+        self.processed_images = np.array(self.processed_images)
+        self.processed_images = self.processed_images / 255.0
+
+        train_dataset = tf.data.Dataset.from_tensor_slices(self.processed_images)
+
+        if self.shuffle == True:
+            train_dataset = train_dataset.shuffle(self.buffer_size).batch(BATCH_SIZE)
+        else:
+            train_dataset = train_dataset.batch(BATCH_SIZE)
+
+        return train_dataset
+
+def train(write_logs=True):
 
     model = VAE()
+
+    if write_logs == True:
+        (train_writer_, val_writer_) = LogsWriter()
 
     for epoch in range(NO_EPOCHS):
 
@@ -74,20 +101,18 @@ def train():
             gradients = tape.gradient(loss_, model.trainable_weights)
             optimizer.apply_gradients(zip(gradients, model.trainable_weights))
 
+        with train_writer_.as_default():
+            
+            tf.summary.scalar("train_loss", loss_, step=epoch)
+
+            train_writer_.flush()
+
         print(f"Epoch: {epoch}\nloss: {loss_}")
         # Write Checkpoint at epoch level or at batch level
 
-# things to do tomorrow:
-# - write training_loop and test the model
-# - adjust the loss func! it's getting too large
-
-
-# - get_data(get_data func)
-# - write_checkpoints
-# - write logs for tensor_board
-
 if __name__ == "__main__":
     print("Starting tarining.py")
-    # train()
+    dd = DataPrep()
+    data = dd.prepare_data("\\train_data")
+    print(data.shape)
     print("session ended")
-    # print("hello world!")
