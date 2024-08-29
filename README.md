@@ -49,8 +49,9 @@ This implementation provides a customizable framework for building and training 
 
 Visualize Results using the visualize.py script:
 
-```bash
-python visualize.py --model_path <path_to_saved_model> --latent_dim 2
+   ```bash
+   python visualize.py --model_path <path_to_saved_model> --latent_dim 2
+   ```
 
 ## Contributing
 
@@ -58,7 +59,7 @@ We welcome contributions to improve this playground 😉!
 
 ## License
 
-This project is licensed under the MIT License. See the full license text below:
+This project is licensed under the MIT License.
 
 ---
 
@@ -68,4 +69,3 @@ This project is based on the concepts presented in the paper:
 
 Kingma, Diederik P., and Max Welling. "Auto-Encoding Variational Bayes." arXiv preprint arXiv:1312.6114 (2013).
 
-   
